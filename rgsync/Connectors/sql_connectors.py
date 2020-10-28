@@ -180,11 +180,11 @@ class MySqlConnector(BaseSqlConnector):
 
     def PrepereQueries(self, mappings):
         def GetUpdateQuery(tableName, mappings, pk):
-            query = 'REPLACE INTO %s' % tableName
+            query = 'INSERT INTO %s' % tableName
             values = [val for kk, val in mappings.items() if not kk.startswith('_')]
             values = [self.pk] + values
             values.sort()
-            query = '%s(%s) values(%s)' % (query, ','.join(values), ','.join([':%s' % a for a in values]))
+            query = '%s(%s) values(%s) ON DUPLICATE KEY UPDATE %s=:%s' % (query, ','.join(values), ','.join([':%s' % a for a in values]),pk,pk)
             return query
         self.addQuery = GetUpdateQuery(self.tableName, mappings, self.pk)
         self.delQuery = 'delete from %s where %s=:%s' % (self.tableName, self.pk, self.pk)
