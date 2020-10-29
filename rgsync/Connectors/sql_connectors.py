@@ -145,6 +145,8 @@ class BaseSqlConnector():
                 self.shouldCompareId = False
                 if op != OPERATION_UPDATE_REPLICATE: # we have only key name, it means that the key was deleted
                     if isAddBatch:
+                        WriteBehindLog(self.sqlText(query))
+                        WriteBehindLog(batch)
                         self.conn.execute(self.sqlText(query), batch)
                         batch = []
                         isAddBatch = False
@@ -152,12 +154,16 @@ class BaseSqlConnector():
                     batch.append(x)
                 else:
                     if not isAddBatch:
+                        WriteBehindLog(self.sqlText(query))
+                        WriteBehindLog(batch)
                         self.conn.execute(self.sqlText(query), batch)
                         batch = []
                         isAddBatch = True
                         query = self.addQuery
                     batch.append(x)
             if len(batch) > 0:
+                WriteBehindLog(self.sqlText(query))
+                WriteBehindLog(batch)
                 self.conn.execute(self.sqlText(query), batch)
                 if self.exactlyOnceTableName is not None:
                     self.conn.execute(self.sqlText(self.exactlyOnceQuery), {'id':shardId, 'val':lastStreamId})
@@ -185,7 +191,7 @@ class MySqlConnector(BaseSqlConnector):
             values = [self.pk] + values
             values.sort()
             query = '%s(%s) values(%s)' % (query, ','.join(values), ','.join([':%s' % a for a in values]))
-            WriteBehindLog('SQL "%s" ' % query)
+            WriteBehindLog('LEBBOS SQL "%s" ' % query)
             return query
         self.addQuery = GetUpdateQuery(self.tableName, mappings, self.pk)
         self.delQuery = 'delete from %s where %s=:%s' % (self.tableName, self.pk, self.pk)
