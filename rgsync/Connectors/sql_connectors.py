@@ -184,7 +184,7 @@ class MySqlConnector(BaseSqlConnector):
             values = [val for kk, val in mappings.items() if not kk.startswith('_')]
             values = [self.pk] + values
             values.sort()
-            query = '%s(%s) values(%s) ON DUPLICATE KEY UPDATE %s=%s' % (query, ','.join(values), ','.join([':%s' % a for a in values]),pk,pk)
+            query = '%s(%s) values(%s) ON DUPLICATE KEY UPDATE 	duplicate_counter=(duplicate_counter+1)' % (query, ','.join(values), ','.join([':%s' % a for a in values]))
             WriteBehindLog('SQL "%s" ' % query)
             return query
         self.addQuery = GetUpdateQuery(self.tableName, mappings, self.pk)
